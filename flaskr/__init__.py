@@ -45,7 +45,7 @@ def hello():
     # select and parse 10 random poems to be used for this round of generation
     main.parse_poem_csv()
 
-    return render_template('website.html')
+    return render_template('index.html')
 
 @app.route("/upload", methods=['GET', 'POST'])
 def upload_file():
@@ -57,7 +57,7 @@ def upload_file():
 
         # check if the post request has the files part
         if 'files' not in request.files:
-            return render_template('website.html', \
+            return render_template('index.html', \
                                    files_uploaded = 'No files part')
         
         # retrieves uploaded files
@@ -65,7 +65,7 @@ def upload_file():
         
         # if no files were selected
         if len(files) == 0:
-            return render_template('website.html', \
+            return render_template('index.html', \
                                files_uploaded = 'No file selected. Try again.')
 
         # if valid files were uploaded
@@ -75,7 +75,7 @@ def upload_file():
                 filename = secure_filename(file.filename)
                 # saves uploaded image file to images folder
                 file.save(os.path.join(app.config['IMAGES_FOLDER'], filename))
-        return render_template('website.html', \
+        return render_template('index.html', \
                                files_uploaded = 'Files uploaded successfully!')
     return ''
 
