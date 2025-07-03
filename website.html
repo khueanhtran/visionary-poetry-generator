@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+    <head>
+        <meta charset="UTF-8">
+        <title>Vision-based Poetry</title>
+        <style>
+            #poem-text {
+                font-size: 80px;
+                color: blue;
+                text-align: left;
+                white-space: pre-wrap;
+                margin: 50px 50px 50px 50px;
+            }
+            #main-poem-name {
+                font-size: 90px;
+                color: blue;
+                text-align: center;
+                margin: 50px 50px 50px 50px;
+            }
+            .poem-title {
+                font-size: 60px;
+                color: blue;
+                text-align: left;
+                margin: 50px 50px 50px 50px;
+            }
+            .poem-entry {
+                font-size: 50px;
+                color: blue;
+                text-align: left;
+                white-space: pre-wrap;
+                margin: 50px 50px 50px 50px;
+            }
+            .status {
+                font-size: 60px;
+                color: blue;
+                text-align: center;
+            }
+            button {
+                background-color: #457a27;
+                border: none;
+                color: white;
+                padding: 15px 32px;
+                text-align: center;
+                text-decoration: none;
+                font-size: 50px;
+                margin: auto;
+                width: 50%;
+                display: block;
+                cursor: pointer;
+            }
+            #image-upload {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                font-family: Arial, sans-serif;
+                margin: 50px auto;
+                width: 80%;
+                max-width: 400px;
+            }
+            #upload-header {
+                font-size: 70px; 
+                text-align: center;
+            }
+            label {
+                font-size: 60px;
+            }
+            #file {
+                font-size: 40px;
+                padding: 10px 15px;
+                border: 2px solid #007BFF;
+                border-radius: 5px;
+                cursor: pointer;
+            }
+            #submit {
+                font-size: 40px;
+                font-weight: bold;
+                color: white;
+                background-color: #007BFF;
+                padding: 10px 20px;
+                border: none;
+                border-radius: 5px;
+                margin-top: 20px;
+                cursor: pointer;
+            }
+        </style>
+        
+    </head>
+    <body>
+        <h1 id="upload-header">Upload image file(s)!</h1>
+        <div id="home-layer">
+            <form id='image-upload' action="/upload" method="POST" 
+            enctype="multipart/form-data">
+                <label for="files">Select file(s):</label>
+                <br>
+                <div id="choose-file">
+                    <input type="file" id="file" name="files" multiple />
+                    <br /><br />
+                    <input id="submit" type="submit"/>
+                </div>
+            </form>
+
+            <p id="upload-status" class="status">{{files_uploaded}}</p>
+
+            <div id="generate-layer">
+                <form action="/generate" method="POST">
+                    <button id='generate-button' onclick="displayPoem()" 
+                    type="button">Generate Poem</button>
+                </form>
+            </div>  
+
+            <br>
+
+            <div>
+                <form action="/history" method="POST">
+                    <button id='history-button' onclick="viewOldPoems()" 
+                    type="button">View old poems</button>
+                </form>
+            </div>
+
+            <br>
+            <p id="generate-status" class="status"></p>
+
+        </div>    
+
+        <div id="display-generated-poem-layer" style="visibility: hidden;">
+            <h2 id="main-poem-name"></h2>
+            <p id="poem-text"></p>
+            <button type='button' id="speak-button" onclick="sayIt('poem-text')">
+                Hear the poem!</button>
+            <br>
+            <form action="/" method="GET">
+                <button id='restart-button' type="submit">Restart</button>
+            </form>
+        </div>
+
+        <div id="history"></div>
+
+        <script src="{{url_for('static', filename='js/tts.js') }}"></script>
+
+        <script>
+            function viewOldPoems(){
+                event.preventDefault();
+
+                fetch('/history', {method: 'POST'})
+                .then(response => response.json())
+                .then(data => {
+                    const historyDiv = document.getElementById('history')
+                    for (const[filename, poem] of Object.entries(data)) {
+                        const itemDiv = document.createElement('div')
+                        itemDiv.classList.add('poem-item')
+
+                        const title = document.createElement('h3')
+                        title.textContent = filename
+                        title.classList.add("poem-title")
+                        itemDiv.appendChild(title)
+
+                        const content = document.createElement('p')
+                        content.textContent = poem
+                        content.classList.add("poem-entry")
+                        content.id = filename
+                        itemDiv.appendChild(content)
+
+                        const hearButton = document.createElement('button')
+                        hearButton.type = 'button'
+                        hearButton.id = 'speak-button'
+                        hearButton.onclick = () => sayIt(filename);
+                        hearButton.textContent = 'Hear the poem!'
+                        itemDiv.appendChild(hearButton)
+
+                        historyDiv.appendChild(itemDiv)
+                    }
+                })
+                .catch(error => console.error('Error fetching old poems:', error));
+            }
+
+
+            function displayPoem() {
+                event.preventDefault();
+
+                document.getElementById('generate-status').textContent 
+                = "Generating...";
+    
+                fetch('/generate', {
+                    method: 'POST',
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.poem == "*NO IMAGES*") {
+                        document.getElementById('generate-status').textContent 
+                        = "No images found. Upload images first before \
+                                                        generating poem!";
+                    } else {
+                        // Display the generated poem
+                        document.getElementById('main-poem-name').innerText 
+                        = data.name;
+                        document.getElementById('poem-text').innerText 
+                        = data.poem;
+                        document.getElementById('generate-status').textContent 
+                        = "";
+                        document.getElementById('display-generated-poem-layer')
+                        .style.visibility = "visible"
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('generate-status').textContent = 
+                    "Error generating poem.";
+                });
+            }
+        </script>
+
+    </body>
+</html>
